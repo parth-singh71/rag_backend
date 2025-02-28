@@ -41,6 +41,24 @@ python manage.py runserver
 
 The server will run at http://127.0.0.1:8000/.
 
+## Running Unit Tests
+
+This project includes unit tests to ensure API functionality. To run all tests, use:
+
+```bash
+python manage.py test
+```
+
+### Unit Test Cases Location
+
+All unit tests are located in: `api/tests/`
+
+### Example to run a specific test case:
+
+```bash
+python manage.py test api.tests.test_views.GenericDocumentsViewTest.test_get_all_documents
+```
+
 ## Testing with Postman
 
 - [Download Postman Collection](./RAG_Backend.postman_collection.json)

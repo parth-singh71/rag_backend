@@ -11,6 +11,9 @@ class Document(models.Model):
         upload_to="documents/", validators=[FileExtensionValidator(["pdf"])]
     )
 
+    def __str__(self):
+        return self.title
+
 
 class SelectedDocuments(models.Model):
     selected_ids = models.JSONField()

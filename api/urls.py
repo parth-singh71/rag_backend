@@ -19,6 +19,7 @@ urlpatterns = [
         DocumentSelectionView.as_view(),
         name="document-selection",
     ),
-    path("ask/", QnAView.as_view()),
-    path("documents/", GenericDocumentsView.as_view()),
+    path("ask/", QnAView.as_view(), name="qna"),
+    path("documents/", GenericDocumentsView.as_view(), name="documents-list"),
+    path("documents/<int:id>/", GenericDocumentsView.as_view(), name="document-detail"),
 ]

@@ -33,7 +33,39 @@ pip install -r requirements.txt
 python manage.py migrate
 ```
 
-### 5. Start Django Server
+### 5. Add Environment Variables
+
+Since this project uses `gpt-4o-mini` for text generation in RAG, you will need to add an API Key from OpenAI for this project to work.
+
+#### **For Linux (Bash)**
+
+```bash
+echo 'export OPENAI_API_KEY="YOUR_API_KEY"' >> ~/.bashrc && source ~/.bashrc
+```
+
+If using a login shell, use `~/.profile` instead of `~/.bashrc`.
+
+#### For MacOS (Bash Shell):
+
+```bash
+echo 'export OPENAI_API_KEY="YOUR_API_KEY"' >> ~/.bash_profile && source ~/.bash_profile
+```
+
+#### For MacOS (Zsh Shell):
+
+```sh
+echo 'export OPENAI_API_KEY="YOUR_API_KEY"' >> ~/.zshrc && source ~/.zshrc
+```
+
+#### For Windows (Powershell):
+
+```powershell
+setx OPENAI_API_KEY "YOUR_API_KEY"
+```
+
+Note: For Windows users, restarting the terminal (or system) is required after using setx.
+
+### 6. Start Django Server
 
 ```bash
 python manage.py runserver

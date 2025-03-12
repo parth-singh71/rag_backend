@@ -10,7 +10,7 @@ This project is designed to provide a set of APIs for Document Ingestion and RAG
 
 ```bash
 git clone git@github.com:parth-singh71/rag_backend.git
-cd rag-backend
+cd rag_backend
 ```
 
 ### 2. Create & Activate Virtual Environment

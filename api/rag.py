@@ -43,7 +43,7 @@ class RAG:
         :return: List of documents representing the pages in the PDF.
         """
         loader = PyPDFLoader(file_path)
-        pages = []
+        pages: List[Document] = []
         for page in loader.lazy_load():
             pages.append(page)
         return pages

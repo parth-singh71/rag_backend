@@ -4,11 +4,12 @@ from .views import (
     QnAView,
     DocumentUploadView,
     DocumentSelectionView,
-    GenericDocumentsView,
+    GenericUserDocumentsView,
 )
 
 
 urlpatterns = [
+    path("auth/", include("users.urls")),
     path(
         "documents/upload/",
         DocumentUploadView.as_view(),
@@ -20,6 +21,10 @@ urlpatterns = [
         name="document-selection",
     ),
     path("ask/", QnAView.as_view(), name="qna"),
-    path("documents/", GenericDocumentsView.as_view(), name="documents-list"),
-    path("documents/<int:id>/", GenericDocumentsView.as_view(), name="document-detail"),
+    path("documents/", GenericUserDocumentsView.as_view(), name="documents-list"),
+    path(
+        "documents/<int:id>/",
+        GenericUserDocumentsView.as_view(),
+        name="document-detail",
+    ),
 ]

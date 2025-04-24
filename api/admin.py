@@ -5,19 +5,28 @@ from api.models import Document, SelectedDocuments
 
 # Register your models here.
 @admin.register(Document)
-class UserSkillAdmin(admin.ModelAdmin):
-    """Admin View for UserSkill"""
+class DocumentAdmin(admin.ModelAdmin):
+    """Admin View for Document"""
 
-    list_display = ("title", "uploaded_at", "file")
-    list_filter = ("uploaded_at",)
+    list_display = (
+        "title",
+        "uploaded_by",
+        "uploaded_at",
+        "file",
+    )
+    list_filter = (
+        "uploaded_at",
+        "uploaded_by",
+    )
 
 
 @admin.register(SelectedDocuments)
-class UserEducationAdmin(admin.ModelAdmin):
-    """Admin View for UserEducation"""
+class SelectedDocumentsAdmin(admin.ModelAdmin):
+    """Admin View for SelectedDocuments"""
 
     list_display = (
         "selected_ids",
         "created_at",
+        "user",
     )
-    list_filter = ("created_at",)
+    list_filter = ("created_at", "user")

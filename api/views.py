@@ -11,7 +11,8 @@ from .serializers import (
     DocumentSerializer,
     QuestionSerializer,
 )
-from .rag import RAG
+from RAG.data_injector import DataInjector
+from RAG.corrective_rag import CorrectiveRAG
 
 
 # Create your views here.
@@ -25,13 +26,14 @@ class DocumentUploadView(APIView):
 
     def post(self, request, *args, **kwargs):
         # Validating incoming data with the serializer
+        curr_user = request.user
         serializer = DocumentSerializer(data=request.data)
         if serializer.is_valid():
             # Saving the valid document to the database
-            document = serializer.save()
-            rag = RAG()
-            # Processing the uploaded document with RAG
-            rag.add_document(document.file.path)
+            document = serializer.save(uploaded_by=curr_user)
+            injector = DataInjector()
+            # Injecting document into vector DB with user_id
+            injector.add_document(document.file.path, user_id=str(curr_user.id))
             return Response(
                 {
                     "upload_status": "success",
@@ -43,14 +45,20 @@ class DocumentUploadView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class GenericDocumentsView(GenericAPIView, ListModelMixin, RetrieveModelMixin):
+class GenericUserDocumentsView(GenericAPIView, ListModelMixin, RetrieveModelMixin):
     """
-    View to list and retrieve document instances.
+    View to list and retrieve user's document instances.
     """
 
     serializer_class = DocumentSerializer
     queryset = Document.objects.all()
     lookup_field = "id"
+
+    def get_queryset(self):
+        """
+        Return documents that belong only to the currently authenticated user.
+        """
+        return Document.objects.filter(uploaded_by=self.request.user)
 
     def get(self, request, id=None):
         """
@@ -72,29 +80,46 @@ class DocumentSelectionView(APIView):
         """
         Store selected document IDs in the database.
         """
+        curr_user = request.user
         serializer = DocumentSelectionSerializer(data=request.data)
         if serializer.is_valid():
             doc_ids = serializer.validated_data["document_ids"]
 
             # Validating document existence
-            documents = get_list_or_404(Document, id__in=doc_ids)
+            # documents = get_list_or_404(Document, id__in=doc_ids)
+            documents = Document.objects.filter(id__in=doc_ids, uploaded_by=curr_user)
 
-            rag = RAG()
-            rag.clear_vectors()
+            # Check if all provided IDs are valid and owned by user
+            if documents.count() != len(doc_ids):
+                return Response(
+                    {
+                        "error": "One or more documents are not owned by the current user."
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
 
-            # Clearing previous selection
-            # SelectedDocuments.objects.all().delete()
-            # Adding new selection
-            selected_docs = SelectedDocuments.objects.create(selected_ids=doc_ids)
+            injector = DataInjector()
+            injector.clear_vectors()
+
+            # Creating or Updating selection
+            try:
+                selected_docs_obj = SelectedDocuments.objects.get(user=curr_user)
+                selected_docs_obj.selected_ids = doc_ids
+                selected_docs_obj.save()
+            except SelectedDocuments.DoesNotExist:
+                selected_docs_obj = SelectedDocuments.objects.create(
+                    user=curr_user,
+                    selected_ids=doc_ids,
+                )
 
             for doc_id in doc_ids:
                 document = Document.objects.get(id=doc_id)
-                rag.add_document(document.file.path)
+                injector.add_document(document.file.path, user_id=curr_user.id)
 
             return Response(
                 {
                     "message": "Documents selected successfully",
-                    "selected_documents": selected_docs.selected_ids,
+                    "selected_documents": selected_docs_obj.selected_ids,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -106,12 +131,15 @@ class DocumentSelectionView(APIView):
         Retrieve the IDs of selected documents.
         """
         try:
-            # Getting the most recent selection
-            selected_docs = SelectedDocuments.objects.latest("created_at")
-            return Response(
-                {"selected_documents": selected_docs.selected_ids},
-                status=status.HTTP_200_OK,
-            )
+            # Getting the most recent user's selection
+            selected_docs = SelectedDocuments.objects.get(user=request.user)
+
+            if selected_docs:
+                return Response(
+                    {"selected_documents": selected_docs.selected_ids},
+                    status=status.HTTP_200_OK,
+                )
+            raise SelectedDocuments.DoesNotExist
         except SelectedDocuments.DoesNotExist:
             return Response({"selected_documents": []}, status=status.HTTP_200_OK)
 
@@ -125,21 +153,27 @@ class QnAView(APIView):
         """
         Generate an answer for a given question based on the selected documents.
         """
+        curr_user = request.user
         # Validating incoming question data
         serializer = QuestionSerializer(data=request.data)
         if serializer.is_valid():
             question = serializer.validated_data["question"]
+            thread_id = serializer.validated_data["thread_id"]
 
             # Fetching selected documents from DB
             try:
-                selected_docs = SelectedDocuments.objects.latest("created_at")
+                selected_docs = SelectedDocuments.objects.get(user=curr_user)
                 doc_ids = selected_docs.selected_ids
             except SelectedDocuments.DoesNotExist:
                 print("No selected documents found.")
 
-            rag = RAG()
+            crag = CorrectiveRAG()
             # Generating Answer using RAG
-            answer = rag.ask_question(question)
+            answer = crag.run(
+                question,
+                user_id=str(curr_user.id),
+                thread_id=(thread_id if len(thread_id) > 0 else "default"),
+            )
 
             return Response(
                 {"question": question, "answer": answer}, status=status.HTTP_200_OK

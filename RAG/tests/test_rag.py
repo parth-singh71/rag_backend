@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch
 from langchain_core.documents import Document
-from api.rag import RAG
+from RAG.rag import RAG
 
 
 class TestRAG(TestCase):
@@ -9,7 +9,7 @@ class TestRAG(TestCase):
         """Initialize RAG instance before each test"""
         self.rag_module = RAG()
 
-    @patch("api.rag.PyPDFLoader")
+    @patch("RAG.rag.PyPDFLoader")
     def test_data_extracter(self, MockLoader):
         """Test extracting pages from a PDF file"""
         mock_loader = MockLoader.return_value
@@ -22,7 +22,7 @@ class TestRAG(TestCase):
         self.assertEqual(len(pages), 2)
         self.assertEqual(pages[0].page_content, "Page 1 text")
 
-    @patch("api.rag.RecursiveCharacterTextSplitter")
+    @patch("RAG.rag.RecursiveCharacterTextSplitter")
     def test_split_text(self, MockSplitter):
         """Test splitting text into chunks"""
         mock_splitter = MockSplitter.return_value
@@ -36,7 +36,7 @@ class TestRAG(TestCase):
         self.assertEqual(len(chunks), 2)
         self.assertEqual(chunks[0].page_content, "Chunk 1")
 
-    @patch("api.rag.Chroma")
+    @patch("RAG.rag.Chroma")
     def test_add_documents_to_db(self, MockChroma):
         """Test adding documents to the vector database"""
         mock_chroma = MockChroma.return_value
@@ -51,7 +51,7 @@ class TestRAG(TestCase):
         doc_ids = self.rag_module._RAG__add_documents_to_db(docs)
         self.assertEqual(len(doc_ids), 2)
 
-    @patch("api.rag.Chroma")
+    @patch("RAG.rag.Chroma")
     def test_retrieve_relevant_documents_from_db(self, MockChroma):
         """Test retrieving relevant documents from the vector store"""
         mock_chroma = MockChroma.return_value
@@ -68,8 +68,8 @@ class TestRAG(TestCase):
         # self.assertEqual(len(results), 2)
         self.assertEqual(results[0].page_content, "Relevant Doc 1")
 
-    @patch("api.rag.init_chat_model")
-    @patch("api.rag.ChatPromptTemplate")
+    @patch("RAG.rag.init_chat_model")
+    @patch("RAG.rag.ChatPromptTemplate")
     def test_ask_question(self, MockChatPromptTemplate, MockChatModel):
         """Test asking a question and getting an AI-generated response"""
         mock_llm = MockChatModel.return_value
@@ -89,7 +89,7 @@ class TestRAG(TestCase):
             response = self.rag_module.ask_question("What is RAG?")
             self.assertEqual(response, "Generated answer")
 
-    @patch("api.rag.Chroma")
+    @patch("RAG.rag.Chroma")
     def test_clear_vectors(self, MockChroma):
         """Test clearing all vectors in the database"""
         mock_chroma = MockChroma.return_value

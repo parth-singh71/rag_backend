@@ -28,3 +28,4 @@ class SelectedDocumentsSerializer(serializers.ModelSerializer):
 
 class QuestionSerializer(serializers.Serializer):
     question = serializers.CharField()
+    thread_id = serializers.CharField()
